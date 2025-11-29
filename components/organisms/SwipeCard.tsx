@@ -16,43 +16,55 @@ const SwipeCardComponent: React.FC<SwipeCardProps> = ({ profile, likeOpacity, no
   const imageSource = useMemo(() => ({ uri: profile.image }), [profile.image]);
 
   return (
-    <ImageBackground
-      source={imageSource}
-      fadeDuration={0}
-      style={styles.image}
-      imageStyle={styles.imageBorder}
-    >
-      <View style={styles.overlay} />
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.85)']}
-        style={styles.gradient}
-        pointerEvents="none"
-      />
-      <View style={styles.infoContainer}>
-        <ProfileInfo profile={profile} />
+    <View style={styles.container}>
+      <View style={styles.imageWrapper}>
+        <ImageBackground
+          source={imageSource}
+          fadeDuration={0}
+          style={styles.image}
+          imageStyle={styles.imageBorder}
+        >
+          <View style={styles.overlay} />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.85)']}
+            style={styles.gradient}
+            pointerEvents="none"
+          />
+          <View style={styles.infoContainer}>
+            <ProfileInfo profile={profile} />
+          </View>
+        </ImageBackground>
       </View>
       {showBadges && (
         <>
-          <Animated.View pointerEvents="none" style={[styles.badge, styles.likeBadge, { opacity: likeOpacity ?? 0, transform: [{rotateX: '-45deg'}, {rotateZ: '-45deg'}] }]}>
+          <Animated.View pointerEvents="none" style={[styles.badge, styles.likeBadge, { opacity: likeOpacity ?? 0, transform: [{rotateX: '-15deg'}, {rotateZ: '-15deg'}] }]}>
             <Text style={styles.badgeText}>LIKE</Text>
           </Animated.View>
-          <Animated.View pointerEvents="none" style={[styles.badge, styles.nopeBadge, { opacity: nopeOpacity ?? 0, transform: [{rotateX: '45deg'}, {rotateZ: '45deg'}] }]}>
+          <Animated.View pointerEvents="none" style={[styles.badge, styles.nopeBadge, { opacity: nopeOpacity ?? 0, transform: [{rotateX: '15deg'}, {rotateZ: '15deg'}] }]}>
             <Text style={styles.badgeText}>NOPE</Text>
           </Animated.View>
         </>
       )}
-    </ImageBackground>
+    </View>
   );
 };
 
 export const SwipeCard = memo(SwipeCardComponent);
 
 const styles = StyleSheet.create({
-  image: {
+  container: {
+    flex: 1,
+    position: 'relative',
+    overflow: 'visible',
+  },
+  imageWrapper: {
     flex: 1,
     borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: '#101010',
+  },
+  image: {
+    flex: 1,
   },
   imageBorder: {
     borderRadius: 24,
@@ -67,6 +79,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: '55%',
+    borderRadius: 24,
   },
   infoContainer: {
     position: 'absolute',
@@ -83,7 +96,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 10,
     borderWidth: 3,
-    zIndex: 10
+    zIndex: 1001,
+    overflow: 'visible',
   },
   badgeText: {
     fontSize: 40,

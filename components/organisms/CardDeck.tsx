@@ -84,20 +84,38 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({
 
   const handleSwipeComplete = useCallback(
     (direction: SwipeDirection) => {
-      const swipedProfile = profiles[indexRef.current];
       pan.setValue({ x: 0, y: 0 });
+
+      const totalProfiles = profiles.length;
+      if (totalProfiles === 0) {
+        isAnimatingRef.current = false;
+        return;
+      }
+
+      const currentCardIndex = loop ? indexRef.current % totalProfiles : indexRef.current;
+      const swipedProfile = profiles[currentCardIndex];
+
       if (swipedProfile) {
-        historyRef.current.push({ profile: swipedProfile, direction, index: indexRef.current });
+        historyRef.current.push({ profile: swipedProfile, direction, index: currentCardIndex });
         onSwipe?.(swipedProfile, direction);
       }
-      setCurrentIndex((prev) => {
-        if (loop && profiles.length > 0) {
-          return (prev + 1) % profiles.length;
-        }
-        return prev + 1;
-      });
+
+      const nextIndex = loop
+        ? (currentCardIndex + 1) % totalProfiles
+        : currentCardIndex + 1;
+
+      indexRef.current = nextIndex;
+
+      if (nextIndex === currentCardIndex) {
+        // Happens when looping a single card; React state won't change, so release the lock manually.
+        isAnimatingRef.current = false;
+        onIndexChange?.(nextIndex);
+        return;
+      }
+
+      setCurrentIndex(nextIndex);
     },
-    [loop, onSwipe, pan, profiles],
+    [loop, onIndexChange, onSwipe, pan, profiles],
   );
 
   const triggerSwipe = useCallback(
@@ -256,6 +274,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: CARD_HEIGHT,
     borderRadius: 24,
+    overflow: 'visible',
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 14,
