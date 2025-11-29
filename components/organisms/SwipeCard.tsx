@@ -37,10 +37,24 @@ const SwipeCardComponent: React.FC<SwipeCardProps> = ({ profile, likeOpacity, no
       </View>
       {showBadges && (
         <>
-          <Animated.View pointerEvents="none" style={[styles.badge, styles.likeBadge, { opacity: likeOpacity ?? 0, transform: [{rotateX: '-15deg'}, {rotateZ: '-15deg'}] }]}>
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.badge,
+              styles.likeBadge,
+              { opacity: likeOpacity ?? 0, transform: [{ rotateZ: '-15deg' }] },
+            ]}
+          >
             <Text style={styles.badgeText}>LIKE</Text>
           </Animated.View>
-          <Animated.View pointerEvents="none" style={[styles.badge, styles.nopeBadge, { opacity: nopeOpacity ?? 0, transform: [{rotateX: '15deg'}, {rotateZ: '15deg'}] }]}>
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.badge,
+              styles.nopeBadge,
+              { opacity: nopeOpacity ?? 0, transform: [{ rotateZ: '15deg' }] },
+            ]}
+          >
             <Text style={styles.badgeText}>NOPE</Text>
           </Animated.View>
         </>
@@ -98,6 +112,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     zIndex: 1001,
     overflow: 'visible',
+    elevation: 8,
   },
   badgeText: {
     fontSize: 40,

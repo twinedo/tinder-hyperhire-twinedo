@@ -273,7 +273,6 @@ const styles = StyleSheet.create({
     top: 0,
     width: '100%',
     height: CARD_HEIGHT,
-    borderRadius: 24,
     overflow: 'visible',
     shadowColor: '#000',
     shadowOpacity: 0.12,
