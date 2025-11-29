@@ -68,15 +68,28 @@ const PROFILES: Profile[] = [
 export default function HomeScreen() {
   const deckRef = useRef<CardDeckRef>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [swipeHistory, setSwipeHistory] = useState<{ profile: Profile; direction: SwipeDirection }[]>([]);
   const addLike = useLikesStore((state) => state.addLike);
+  const removeLike = useLikesStore((state) => state.removeLike);
 
   const handleSwipe = (profile: Profile, direction: SwipeDirection) => {
+    setSwipeHistory((prev) => [...prev, { profile, direction }]);
     if (direction === 'right') {
       addLike(profile);
     }
   };
 
+  const handleRewind = () => {
+    const undone = deckRef.current?.rewind();
+    if (!undone) return;
+    setSwipeHistory((prev) => prev.slice(0, -1));
+    if (undone.direction === 'right') {
+      removeLike(undone.profile.id);
+    }
+  };
+
   const hasCards = currentIndex < PROFILES.length;
+  const canRewind = swipeHistory.length > 0;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -108,6 +121,8 @@ export default function HomeScreen() {
           disabled={!hasCards}
           onNope={() => deckRef.current?.swipeLeft()}
           onLike={() => deckRef.current?.swipeRight()}
+          onRewind={handleRewind}
+          rewindDisabled={!canRewind}
         />
       </View>
 

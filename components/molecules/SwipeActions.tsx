@@ -38,9 +38,16 @@ type SwipeActionsProps = {
   onLike: () => void;
   disabled?: boolean;
   onRewind?: () => void;
+  rewindDisabled?: boolean;
 };
 
-export const SwipeActions: React.FC<SwipeActionsProps> = ({ onNope, onLike, onRewind, disabled }) => {
+export const SwipeActions: React.FC<SwipeActionsProps> = ({
+  onNope,
+  onLike,
+  onRewind,
+  disabled,
+  rewindDisabled,
+}) => {
   const likeProgress = useSwipeFeedbackStore((state) => state.likeProgress);
   const nopeProgress = useSwipeFeedbackStore((state) => state.nopeProgress);
 
@@ -67,6 +74,8 @@ export const SwipeActions: React.FC<SwipeActionsProps> = ({ onNope, onLike, onRe
     [likeProgress, nopeProgress],
   );
 
+  const isRewindDisabled = (rewindDisabled ?? disabled) || !onRewind;
+
   return (
     <View style={styles.container}>
       <IconButton
@@ -74,7 +83,7 @@ export const SwipeActions: React.FC<SwipeActionsProps> = ({ onNope, onLike, onRe
         backgroundColor="#ffffff"
         color="#b9bec4"
         onPress={onRewind}
-        disabled={disabled}
+        disabled={isRewindDisabled}
         style={{width: 60, height: 60, position: 'absolute', left: 20}}
         size={40}
         visibleOpacity={undoVisibility}

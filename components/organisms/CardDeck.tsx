@@ -18,6 +18,7 @@ export type SwipeDirection = 'left' | 'right';
 export type CardDeckRef = {
   swipeLeft: () => void;
   swipeRight: () => void;
+  rewind: () => { profile: Profile; direction: SwipeDirection } | null;
 };
 
 type CardDeckProps = {
@@ -47,6 +48,7 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({
 
   const indexRef = useRef(currentIndex);
   const isAnimatingRef = useRef(false);
+  const historyRef = useRef<{ profile: Profile; direction: SwipeDirection; index: number }[]>([]);
   const setLikeProgress = useSwipeFeedbackStore((state) => state.setLikeProgress);
   const setNopeProgress = useSwipeFeedbackStore((state) => state.setNopeProgress);
   const resetSwipeFeedback = useSwipeFeedbackStore((state) => state.reset);
@@ -56,6 +58,7 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({
     pan.setValue({ x: 0, y: 0 });
     indexRef.current = 0;
     isAnimatingRef.current = false;
+    historyRef.current = [];
     resetSwipeFeedback();
   }, [profiles, pan, resetSwipeFeedback]);
 
@@ -84,6 +87,7 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({
       const swipedProfile = profiles[indexRef.current];
       pan.setValue({ x: 0, y: 0 });
       if (swipedProfile) {
+        historyRef.current.push({ profile: swipedProfile, direction, index: indexRef.current });
         onSwipe?.(swipedProfile, direction);
       }
       setCurrentIndex((prev) => {
@@ -153,6 +157,17 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({
   useImperativeHandle(ref, () => ({
     swipeLeft: () => triggerSwipe('left'),
     swipeRight: () => triggerSwipe('right'),
+    rewind: () => {
+      if (isAnimatingRef.current) return null;
+      const last = historyRef.current.pop();
+      if (!last) return null;
+      pan.setValue({ x: 0, y: 0 });
+      indexRef.current = last.index;
+      isAnimatingRef.current = false;
+      resetSwipeFeedback();
+      setCurrentIndex(last.index);
+      return { profile: last.profile, direction: last.direction };
+    },
   }));
 
   const rotate = pan.x.interpolate({
