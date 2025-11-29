@@ -1,6 +1,6 @@
-import React from 'react';
-import { Tabs } from 'expo-router';
 import { Fontisto, Octicons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
+import React from 'react';
 
 export default function TabsLayout() {
   return (
@@ -11,9 +11,8 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: '#b9bec4',
         tabBarStyle: {
           backgroundColor: '#fff',
-          height: 70,
+          height: 80,
           borderTopWidth: 0,
-          paddingBottom: 12,
           paddingTop: 10,
         },
         tabBarLabelStyle: {
@@ -25,14 +24,14 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: '',
           tabBarIcon: ({ color }) => <Fontisto name="tinder" size={30} color={color ?? '#ff5864'} />,
         }}
       />
       <Tabs.Screen
         name="likes"
         options={{
-          title: 'Likes',
+          title: '',
           tabBarIcon: ({ color }) => <Octicons name="sparkle-fill" size={30} color={color ?? '#b9bec4'} />,
         }}
       />
