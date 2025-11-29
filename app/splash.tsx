@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
-import { Image, StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Fontisto } from '@expo/vector-icons';
 import { useEffect } from 'react';
 
 export default function SplashScreen() {
@@ -19,11 +20,8 @@ export default function SplashScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: Colors[colorScheme ?? 'light'].background }]}>
-      <Image
-        source={require('@/assets/images/logo.png')}
-        style={styles.logo}
-        resizeMode="contain"
-      />
+      <Fontisto name="tinder" size={70} color="#ff5864" />
+      <Text style={styles.logo}>tinder</Text>
     </View>
   );
 }
@@ -35,7 +33,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: 200,
-    height: 200,
+    fontSize: 40,
+    fontWeight: '800',
+    color: '#ff5864',
+    letterSpacing: 0.4,
   },
 });
