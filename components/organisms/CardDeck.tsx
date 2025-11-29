@@ -10,6 +10,7 @@ import React, {
 import { Animated, Dimensions, PanResponder, StyleSheet, View } from 'react-native';
 
 import { SwipeCard } from '@/components/organisms/SwipeCard';
+import { useSwipeFeedbackStore } from '@/stores/swipeFeedbackStore';
 import { Profile } from '@/types/profile';
 
 export type SwipeDirection = 'left' | 'right';
@@ -27,7 +28,7 @@ type CardDeckProps = {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.28;
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.72;
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.71;
 const NEXT_CARD_OFFSET = 28;
 
 export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({ profiles, onSwipe, onIndexChange }, ref) => {
@@ -36,13 +37,31 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({ profiles, onSw
 
   const indexRef = useRef(currentIndex);
   const isAnimatingRef = useRef(false);
+  const setLikeProgress = useSwipeFeedbackStore((state) => state.setLikeProgress);
+  const setNopeProgress = useSwipeFeedbackStore((state) => state.setNopeProgress);
+  const resetSwipeFeedback = useSwipeFeedbackStore((state) => state.reset);
 
   useEffect(() => {
     setCurrentIndex(0);
     pan.setValue({ x: 0, y: 0 });
     indexRef.current = 0;
     isAnimatingRef.current = false;
-  }, [profiles, pan]);
+    resetSwipeFeedback();
+  }, [profiles, pan, resetSwipeFeedback]);
+
+  useEffect(() => {
+    const listenerId = pan.x.addListener(({ value }) => {
+      const likeProgress = Math.max(0, Math.min(1, value / SWIPE_THRESHOLD));
+      const nopeProgress = Math.max(0, Math.min(1, -value / SWIPE_THRESHOLD));
+      setLikeProgress(likeProgress);
+      setNopeProgress(nopeProgress);
+    });
+
+    return () => {
+      pan.x.removeListener(listenerId);
+      resetSwipeFeedback();
+    };
+  }, [pan, resetSwipeFeedback, setLikeProgress, setNopeProgress]);
 
   useEffect(() => {
     indexRef.current = currentIndex;

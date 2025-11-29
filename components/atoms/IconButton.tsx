@@ -10,6 +10,7 @@ type IconButtonProps = {
   onPress?: () => void;
   disabled?: boolean;
   style?: ViewStyle;
+  visibleOpacity?: number;
 };
 
 export const IconButton: React.FC<IconButtonProps> = ({
@@ -20,16 +21,21 @@ export const IconButton: React.FC<IconButtonProps> = ({
   onPress,
   disabled,
   style,
+  visibleOpacity = 1,
 }) => {
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      style={({ pressed }) => [
-        styles.base,
-        { backgroundColor, opacity: disabled ? 0.45 : pressed ? 0.78 : 1 },
-        style,
-      ]}
+      style={({ pressed }) => {
+        const baseOpacity = disabled ? 0.45 : pressed ? 0.78 : 1;
+        const opacity = baseOpacity * visibleOpacity;
+        return [
+          styles.base,
+          style,
+          { backgroundColor, opacity },
+        ];
+      }}
     >
       <FontAwesome name={name} size={size} color={color} />
     </Pressable>
