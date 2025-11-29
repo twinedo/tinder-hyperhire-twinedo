@@ -1,50 +1,55 @@
-# Welcome to your Expo app 👋
+# Tinder Hyperhire
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Tinder-style swiping experience with stacked cards, profile details, haptics, and custom swipe actions built on Expo Router.
 
-## Get started
+## Stack
 
-1. Install dependencies
+- Expo 54.0.25 (React Native 0.81.5, React 19.1.0)
+- Expo Router 6.0.15
+- React Navigation 7 (native/bottom-tabs/elements)
+- Reanimated 4.1.1, Gesture Handler 2.28.0
+- MMKV storage, Zustand state
 
-   ```bash
-   npm install
-   ```
+## Prerequisites
 
-2. Start the app
+- Bun or Node/npm
+- Xcode + iOS Simulator for iOS runs
+- Android Studio + Android Emulator for Android runs
 
-   ```bash
-   npx expo start
-   ```
+## Setup
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+Install dependencies:
 
 ```bash
-npm run reset-project
+bun install
+# or
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### iOS
 
-## Learn more
+```bash
+bunx expo prebuild -p ios
+bun ios             # launches the iOS simulator
+# or
+npx expo prebuild -p ios
+npm run ios
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+### Android
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+bunx expo prebuild -p android
+bun android         # launches the Android emulator
+# or
+npx expo prebuild -p android
+npm run android
+```
 
-## Join the community
+### Web / dev server (optional)
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+bunx expo start
+# or
+npx expo start
+```
