@@ -2,6 +2,10 @@
 
 Tinder-style swiping experience with stacked cards, profile details, haptics, and custom swipe actions built on Expo Router.
 
+## Screenshot
+
+![App screenshot](assets/images/ss.png)
+
 ## Stack
 
 - Expo 54.0.25 (React Native 0.81.5, React 19.1.0)
