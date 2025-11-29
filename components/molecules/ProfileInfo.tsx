@@ -31,7 +31,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile }) => {
 const styles = StyleSheet.create({
   container: {
     gap: 6,
-    marginBottom: 4
+    marginBottom: 20
   },
   name: {
     color: '#fff',
