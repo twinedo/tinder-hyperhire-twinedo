@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SwipeActions } from '@/components/molecules/SwipeActions';
 import { CardDeck, CardDeckRef, SwipeDirection } from '@/components/organisms/CardDeck';
+import { useLikesStore } from '@/stores/likesStore';
 import { Profile } from '@/types/profile';
 
 const PROFILES: Profile[] = [
@@ -67,10 +68,12 @@ const PROFILES: Profile[] = [
 export default function HomeScreen() {
   const deckRef = useRef<CardDeckRef>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [lastAction, setLastAction] = useState<string | null>(null);
+  const addLike = useLikesStore((state) => state.addLike);
 
   const handleSwipe = (profile: Profile, direction: SwipeDirection) => {
-    const label = direction === 'right' ? 'Loved' : 'Noped';
+    if (direction === 'right') {
+      addLike(profile);
+    }
   };
 
   const hasCards = currentIndex < PROFILES.length;
