@@ -9,9 +9,10 @@ type SwipeCardProps = {
   profile: Profile;
   likeOpacity?: Animated.AnimatedInterpolation<string | number>;
   nopeOpacity?: Animated.AnimatedInterpolation<string | number>;
+  showBadges?: boolean;
 };
 
-const SwipeCardComponent: React.FC<SwipeCardProps> = ({ profile, likeOpacity, nopeOpacity }) => {
+const SwipeCardComponent: React.FC<SwipeCardProps> = ({ profile, likeOpacity, nopeOpacity, showBadges = true }) => {
   const imageSource = useMemo(() => ({ uri: profile.image }), [profile.image]);
 
   return (
@@ -30,12 +31,16 @@ const SwipeCardComponent: React.FC<SwipeCardProps> = ({ profile, likeOpacity, no
       <View style={styles.infoContainer}>
         <ProfileInfo profile={profile} />
       </View>
-      <Animated.View pointerEvents="none" style={[styles.badge, styles.likeBadge, { opacity: likeOpacity ?? 0, transform: [{rotateX: '-45deg'}, {rotateZ: '-45deg'}] }]}>
-        <Text style={styles.badgeText}>LIKE</Text>
-      </Animated.View>
-      <Animated.View pointerEvents="none" style={[styles.badge, styles.nopeBadge, { opacity: nopeOpacity ?? 0, transform: [{rotateX: '45deg'}, {rotateZ: '45deg'}] }]}>
-        <Text style={styles.badgeText}>NOPE</Text>
-      </Animated.View>
+      {showBadges && (
+        <>
+          <Animated.View pointerEvents="none" style={[styles.badge, styles.likeBadge, { opacity: likeOpacity ?? 0, transform: [{rotateX: '-45deg'}, {rotateZ: '-45deg'}] }]}>
+            <Text style={styles.badgeText}>LIKE</Text>
+          </Animated.View>
+          <Animated.View pointerEvents="none" style={[styles.badge, styles.nopeBadge, { opacity: nopeOpacity ?? 0, transform: [{rotateX: '45deg'}, {rotateZ: '45deg'}] }]}>
+            <Text style={styles.badgeText}>NOPE</Text>
+          </Animated.View>
+        </>
+      )}
     </ImageBackground>
   );
 };

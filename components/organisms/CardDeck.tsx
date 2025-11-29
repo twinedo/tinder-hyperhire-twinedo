@@ -24,6 +24,9 @@ type CardDeckProps = {
   profiles: Profile[];
   onSwipe?: (profile: Profile, direction: SwipeDirection) => void;
   onIndexChange?: (nextIndex: number) => void;
+  loop?: boolean;
+  emptyLabel?: string;
+  showBadges?: boolean;
 };
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -31,7 +34,14 @@ const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.28;
 const CARD_HEIGHT = SCREEN_HEIGHT * 0.71;
 const NEXT_CARD_OFFSET = 28;
 
-export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({ profiles, onSwipe, onIndexChange }, ref) => {
+export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({
+  profiles,
+  onSwipe,
+  onIndexChange,
+  loop = false,
+  emptyLabel = 'You are all caught up',
+  showBadges = true,
+}, ref) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const pan = useRef(new Animated.ValueXY()).current;
 
@@ -76,14 +86,20 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({ profiles, onSw
       if (swipedProfile) {
         onSwipe?.(swipedProfile, direction);
       }
-      setCurrentIndex((prev) => prev + 1);
+      setCurrentIndex((prev) => {
+        if (loop && profiles.length > 0) {
+          return (prev + 1) % profiles.length;
+        }
+        return prev + 1;
+      });
     },
-    [onSwipe, pan, profiles],
+    [loop, onSwipe, pan, profiles],
   );
 
   const triggerSwipe = useCallback(
     (direction: SwipeDirection) => {
-      if (isAnimatingRef.current || indexRef.current >= profiles.length) return;
+      const hasCards = profiles.length > 0 && (loop || indexRef.current < profiles.length);
+      if (isAnimatingRef.current || !hasCards) return;
       isAnimatingRef.current = true;
       const xTarget = direction === 'right' ? SCREEN_WIDTH * 1.2 : -SCREEN_WIDTH * 1.2;
       Animated.timing(pan, {
@@ -92,7 +108,7 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({ profiles, onSw
         useNativeDriver: true,
       }).start(() => handleSwipeComplete(direction));
     },
-    [handleSwipeComplete, pan, profiles.length],
+    [handleSwipeComplete, loop, pan, profiles.length],
   );
 
   const resetPosition = useCallback(() => {
@@ -106,8 +122,14 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({ profiles, onSw
   const panResponder = useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponder: (_, gesture) =>
-          !isAnimatingRef.current && (Math.abs(gesture.dx) > 6 || Math.abs(gesture.dy) > 6),
+        onMoveShouldSetPanResponder: (_, gesture) => {
+          const hasCards = profiles.length > 0 && (loop || indexRef.current < profiles.length);
+          return (
+            !isAnimatingRef.current &&
+            hasCards &&
+            (Math.abs(gesture.dx) > 6 || Math.abs(gesture.dy) > 6)
+          );
+        },
         onPanResponderMove: (_, gesture) => {
           if (isAnimatingRef.current) return;
           pan.setValue({ x: gesture.dx, y: gesture.dy });
@@ -125,7 +147,7 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({ profiles, onSw
           resetPosition();
         },
       }),
-    [pan, resetPosition, triggerSwipe],
+    [loop, pan, profiles.length, resetPosition, triggerSwipe],
   );
 
   useImperativeHandle(ref, () => ({
@@ -152,16 +174,21 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({ profiles, onSw
   });
 
   const renderCards = () => {
-    if (currentIndex >= profiles.length) {
+    if (profiles.length === 0 || (!loop && currentIndex >= profiles.length)) {
       return (
         <View style={[styles.card, styles.emptyCard]}>
-          <Animated.Text style={styles.emptyText}>You are all caught up</Animated.Text>
+          <Animated.Text style={styles.emptyText}>{emptyLabel}</Animated.Text>
         </View>
       );
     }
 
-    const remaining = profiles.slice(currentIndex);
-    const visibleCards = remaining.slice(0, 2);
+    const topIndex = loop ? currentIndex % profiles.length : currentIndex;
+    const nextIndex = loop ? (topIndex + 1) % profiles.length : topIndex + 1;
+    const hasNext = profiles.length > 1 && (loop || nextIndex < profiles.length);
+
+    const visibleCards = hasNext
+      ? [profiles[topIndex], profiles[nextIndex]]
+      : [profiles[topIndex]];
     const rendered: React.ReactNode[] = [];
 
     for (let i = visibleCards.length - 1; i >= 0; i -= 1) {
@@ -191,6 +218,7 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({ profiles, onSw
             profile={profile}
             likeOpacity={isTopCard ? likeOpacity : undefined}
             nopeOpacity={isTopCard ? nopeOpacity : undefined}
+            showBadges={showBadges}
           />
         </Animated.View>,
       );
