@@ -27,7 +27,7 @@ type CardDeckProps = {
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.28;
-const CARD_HEIGHT = SCREEN_HEIGHT * 0.8;
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.72;
 const NEXT_CARD_OFFSET = 28;
 
 export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({ profiles, onSwipe, onIndexChange }, ref) => {

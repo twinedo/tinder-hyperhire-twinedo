@@ -71,7 +71,6 @@ export default function HomeScreen() {
 
   const handleSwipe = (profile: Profile, direction: SwipeDirection) => {
     const label = direction === 'right' ? 'Loved' : 'Noped';
-    setLastAction(`${label}: ${profile.name}`);
   };
 
   const hasCards = currentIndex < PROFILES.length;
