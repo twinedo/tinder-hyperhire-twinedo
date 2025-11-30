@@ -60,7 +60,8 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({
     isAnimatingRef.current = false;
     historyRef.current = [];
     resetSwipeFeedback();
-  }, [profiles, pan, resetSwipeFeedback]);
+    onIndexChange?.(0);
+  }, [onIndexChange, profiles, pan, resetSwipeFeedback]);
 
   useEffect(() => {
     const listenerId = pan.x.addListener(({ value }) => {
@@ -76,44 +77,34 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({
     };
   }, [pan, resetSwipeFeedback, setLikeProgress, setNopeProgress]);
 
-  useEffect(() => {
-    indexRef.current = currentIndex;
-    isAnimatingRef.current = false;
-    onIndexChange?.(currentIndex);
-  }, [currentIndex, onIndexChange]);
-
   const handleSwipeComplete = useCallback(
     (direction: SwipeDirection) => {
       pan.setValue({ x: 0, y: 0 });
 
-      const totalProfiles = profiles.length;
-      if (totalProfiles === 0) {
-        isAnimatingRef.current = false;
-        return;
-      }
+      setCurrentIndex((prev) => {
+        const totalProfiles = profiles.length;
+        if (totalProfiles === 0) {
+          isAnimatingRef.current = false;
+          return prev;
+        }
 
-      const currentCardIndex = loop ? indexRef.current % totalProfiles : indexRef.current;
-      const swipedProfile = profiles[currentCardIndex];
+        const activeIndex = loop ? prev % totalProfiles : prev;
+        const swipedProfile = profiles[activeIndex];
 
-      if (swipedProfile) {
-        historyRef.current.push({ profile: swipedProfile, direction, index: currentCardIndex });
-        onSwipe?.(swipedProfile, direction);
-      }
+        if (swipedProfile) {
+          historyRef.current.push({ profile: swipedProfile, direction, index: activeIndex });
+          onSwipe?.(swipedProfile, direction);
+        }
 
-      const nextIndex = loop
-        ? (currentCardIndex + 1) % totalProfiles
-        : currentCardIndex + 1;
+        const nextIndex = loop
+          ? (activeIndex + 1) % totalProfiles
+          : Math.min(activeIndex + 1, totalProfiles);
 
-      indexRef.current = nextIndex;
-
-      if (nextIndex === currentCardIndex) {
-        // Happens when looping a single card; React state won't change, so release the lock manually.
-        isAnimatingRef.current = false;
+        indexRef.current = nextIndex;
         onIndexChange?.(nextIndex);
-        return;
-      }
-
-      setCurrentIndex(nextIndex);
+        isAnimatingRef.current = false;
+        return nextIndex;
+      });
     },
     [loop, onIndexChange, onSwipe, pan, profiles],
   );
@@ -183,7 +174,10 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({
       indexRef.current = last.index;
       isAnimatingRef.current = false;
       resetSwipeFeedback();
-      setCurrentIndex(last.index);
+      setCurrentIndex(() => {
+        onIndexChange?.(last.index);
+        return last.index;
+      });
       return { profile: last.profile, direction: last.direction };
     },
   }));

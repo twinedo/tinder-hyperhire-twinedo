@@ -1,11 +1,12 @@
 import { Fontisto } from '@expo/vector-icons';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { SwipeActions } from '@/components/molecules/SwipeActions';
 import { CardDeck, CardDeckRef, SwipeDirection } from '@/components/organisms/CardDeck';
 import { useLikesStore } from '@/stores/likesStore';
+import { useSwipeStore } from '@/stores/swipeStore';
 import { Profile } from '@/types/profile';
 
 const PROFILES: Profile[] = [
@@ -67,13 +68,22 @@ const PROFILES: Profile[] = [
 
 export default function HomeScreen() {
   const deckRef = useRef<CardDeckRef>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [swipeHistory, setSwipeHistory] = useState<{ profile: Profile; direction: SwipeDirection }[]>([]);
+  const currentIndex = useSwipeStore((state) => state.currentIndex);
+  const swipeHistory = useSwipeStore((state) => state.swipeHistory);
+  const setCurrentIndex = useSwipeStore((state) => state.setCurrentIndex);
+  const addSwipe = useSwipeStore((state) => state.addSwipe);
+  const popSwipe = useSwipeStore((state) => state.popSwipe);
+  const resetSwipes = useSwipeStore((state) => state.reset);
   const addLike = useLikesStore((state) => state.addLike);
   const removeLike = useLikesStore((state) => state.removeLike);
 
+  useEffect(() => {
+    resetSwipes();
+    return resetSwipes;
+  }, [resetSwipes]);
+
   const handleSwipe = (profile: Profile, direction: SwipeDirection) => {
-    setSwipeHistory((prev) => [...prev, { profile, direction }]);
+    addSwipe({ profile, direction });
     if (direction === 'right') {
       addLike(profile);
     }
@@ -82,13 +92,13 @@ export default function HomeScreen() {
   const handleRewind = () => {
     const undone = deckRef.current?.rewind();
     if (!undone) return;
-    setSwipeHistory((prev) => prev.slice(0, -1));
+    popSwipe();
     if (undone.direction === 'right') {
       removeLike(undone.profile.id);
     }
   };
 
-  const hasCards = currentIndex < PROFILES.length;
+  const hasCards = useMemo(() => currentIndex < PROFILES.length, [currentIndex]);
   const canRewind = swipeHistory.length > 0;
 
   return (
