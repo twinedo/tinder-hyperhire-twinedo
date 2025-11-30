@@ -74,18 +74,20 @@ export const SwipeActions: React.FC<SwipeActionsProps> = ({
     [likeProgress, nopeProgress],
   );
 
-  const isRewindDisabled = (rewindDisabled ?? disabled) || !onRewind;
+  const isRewindDisabled = (rewindDisabled ?? false) || !onRewind;
+  const rewindBackground = isRewindDisabled ? '#f4e7b5' : '#ffd348';
+  const rewindIconColor = isRewindDisabled ? '#b39a43' : '#8a5b00';
 
   return (
     <View style={styles.container}>
       <IconButton
         name="undo"
-        backgroundColor="#ffffff"
-        color="#b9bec4"
+        backgroundColor={rewindBackground}
+        color={rewindIconColor}
         onPress={onRewind}
         disabled={isRewindDisabled}
-        style={{width: 60, height: 60, position: 'absolute', left: 20}}
-        size={40}
+        style={[styles.sideAction, styles.rewindButton]}
+        size={38}
         visibleOpacity={undoVisibility}
       />
       <IconButton
@@ -114,15 +116,21 @@ const styles = StyleSheet.create({
     bottom: 10,
     left: 0,
     right: 0,
+    zIndex: 5,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 22,
     paddingVertical: 20,
   },
-  likeButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  sideAction: {
+    position: 'absolute',
+    width: 64,
+    height: 64,
+  },
+  rewindButton: {
+    left: 20,
+    borderWidth: 2,
+    borderColor: 'rgba(0,0,0,0.06)',
   },
 });

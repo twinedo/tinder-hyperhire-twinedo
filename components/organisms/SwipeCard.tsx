@@ -7,8 +7,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 type SwipeCardProps = {
   profile: Profile;
-  likeOpacity?: Animated.AnimatedInterpolation<string | number>;
-  nopeOpacity?: Animated.AnimatedInterpolation<string | number>;
+  likeOpacity?: Animated.AnimatedInterpolation<string | number> | number;
+  nopeOpacity?: Animated.AnimatedInterpolation<string | number> | number;
   showBadges?: boolean;
 };
 
