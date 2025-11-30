@@ -27,6 +27,7 @@ type CardDeckProps = {
   onSwipe?: (profile: Profile, direction: SwipeDirection) => void;
   onIndexChange?: (nextIndex: number) => void;
   loop?: boolean;
+  disableSwipes?: boolean;
   emptyLabel?: string;
   showBadges?: boolean;
 };
@@ -44,6 +45,7 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({
   onSwipe,
   onIndexChange,
   loop = false,
+  disableSwipes = false,
   emptyLabel = 'You are all caught up',
   showBadges = true,
 }, ref) => {
@@ -123,7 +125,7 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({
   const triggerSwipe = useCallback(
     (direction: SwipeDirection) => {
       const hasCards = profiles.length > 0 && (loop || currentIndex < profiles.length);
-      if (!hasCards) return;
+      if (!hasCards || disableSwipes) return;
       const target = direction === 'right' ? SWIPE_THRESHOLD : -SWIPE_THRESHOLD;
       handleSwiping(target);
       if (direction === 'right') {
@@ -132,7 +134,7 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({
         swiperRef.current?.swipeLeft();
       }
     },
-    [currentIndex, handleSwiping, loop, profiles.length],
+    [currentIndex, disableSwipes, handleSwiping, loop, profiles.length],
   );
 
   useImperativeHandle(ref, () => ({
@@ -194,6 +196,9 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({
         stackScale={STACK_SCALE}
         stackSeparation={NEXT_CARD_OFFSET}
         horizontalThreshold={SWIPE_THRESHOLD}
+        horizontalSwipe={!disableSwipes}
+        disableLeftSwipe={disableSwipes}
+        disableRightSwipe={disableSwipes}
         verticalSwipe={false}
         outputRotationRange={['-12deg', '0deg', '12deg']}
         disableBottomSwipe

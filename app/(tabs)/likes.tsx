@@ -10,6 +10,8 @@ export default function LikeScreen() {
   const deckRef = useRef<CardDeckRef>(null);
   const likes = useLikesStore((state) => state.likes);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const shouldLoop = likes.length > 1;
+  const disableSwipes = likes.length === 1;
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -35,7 +37,8 @@ export default function LikeScreen() {
           ref={deckRef}
           profiles={likes}
           onIndexChange={setCurrentIndex}
-          loop
+          loop={shouldLoop}
+          disableSwipes={disableSwipes}
           showBadges={false}
           emptyLabel="No likes yet"
         />
