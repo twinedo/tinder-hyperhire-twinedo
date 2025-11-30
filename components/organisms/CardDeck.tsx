@@ -7,7 +7,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Animated, Dimensions, PanResponder, StyleSheet, View } from 'react-native';
+import { Animated, Dimensions, StyleSheet, Text, View } from 'react-native';
+import Swiper from 'react-native-deck-swiper';
 
 import { SwipeCard } from '@/components/organisms/SwipeCard';
 import { useSwipeFeedbackStore } from '@/stores/swipeFeedbackStore';
@@ -34,6 +35,9 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_THRESHOLD = SCREEN_WIDTH * 0.28;
 const CARD_HEIGHT = SCREEN_HEIGHT * 0.73;
 const NEXT_CARD_OFFSET = 28;
+const STACK_SCALE = 4;
+
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
 
 export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({
   profiles,
@@ -44,223 +48,191 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({
   showBadges = true,
 }, ref) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const pan = useRef(new Animated.ValueXY()).current;
-
-  const indexRef = useRef(currentIndex);
-  const isAnimatingRef = useRef(false);
+  const swiperRef = useRef<Swiper<Profile>>(null);
+  const swipeX = useRef(new Animated.Value(0)).current;
   const historyRef = useRef<{ profile: Profile; direction: SwipeDirection; index: number }[]>([]);
+  const deckKey = useMemo(() => profiles.map((profile) => profile.id).join('-'), [profiles]);
   const setLikeProgress = useSwipeFeedbackStore((state) => state.setLikeProgress);
   const setNopeProgress = useSwipeFeedbackStore((state) => state.setNopeProgress);
   const resetSwipeFeedback = useSwipeFeedbackStore((state) => state.reset);
 
+  const likeOpacity = useMemo(
+    () => swipeX.interpolate({
+      inputRange: [0, SWIPE_THRESHOLD],
+      outputRange: [0, 1],
+      extrapolate: 'clamp',
+    }),
+    [swipeX],
+  );
+
+  const nopeOpacity = useMemo(
+    () => swipeX.interpolate({
+      inputRange: [-SWIPE_THRESHOLD, 0],
+      outputRange: [1, 0],
+      extrapolate: 'clamp',
+    }),
+    [swipeX],
+  );
+
+  const resetFeedback = useCallback(() => {
+    swipeX.setValue(0);
+    resetSwipeFeedback();
+  }, [resetSwipeFeedback, swipeX]);
+
   useEffect(() => {
     setCurrentIndex(0);
-    pan.setValue({ x: 0, y: 0 });
-    indexRef.current = 0;
-    isAnimatingRef.current = false;
     historyRef.current = [];
-    resetSwipeFeedback();
+    resetFeedback();
     onIndexChange?.(0);
-  }, [onIndexChange, profiles, pan, resetSwipeFeedback]);
+    return resetFeedback;
+  }, [onIndexChange, profiles, resetFeedback]);
 
-  useEffect(() => {
-    const listenerId = pan.x.addListener(({ value }) => {
-      const likeProgress = Math.max(0, Math.min(1, value / SWIPE_THRESHOLD));
-      const nopeProgress = Math.max(0, Math.min(1, -value / SWIPE_THRESHOLD));
+  const handleSwiping = useCallback(
+    (x: number) => {
+      swipeX.setValue(x);
+      const likeProgress = clamp01(x / SWIPE_THRESHOLD);
+      const nopeProgress = clamp01(-x / SWIPE_THRESHOLD);
       setLikeProgress(likeProgress);
       setNopeProgress(nopeProgress);
-    });
-
-    return () => {
-      pan.x.removeListener(listenerId);
-      resetSwipeFeedback();
-    };
-  }, [pan, resetSwipeFeedback, setLikeProgress, setNopeProgress]);
+    },
+    [setLikeProgress, setNopeProgress, swipeX],
+  );
 
   const handleSwipeComplete = useCallback(
-    (direction: SwipeDirection) => {
-      pan.setValue({ x: 0, y: 0 });
+    (cardIndex: number, direction: SwipeDirection) => {
+      const totalProfiles = profiles.length;
+      if (totalProfiles === 0) return;
 
-      setCurrentIndex((prev) => {
-        const totalProfiles = profiles.length;
-        if (totalProfiles === 0) {
-          isAnimatingRef.current = false;
-          return prev;
-        }
+      const swipedProfile = profiles[cardIndex];
+      if (!swipedProfile) return;
 
-        const activeIndex = loop ? prev % totalProfiles : prev;
-        const swipedProfile = profiles[activeIndex];
+      historyRef.current.push({ profile: swipedProfile, direction, index: cardIndex });
+      onSwipe?.(swipedProfile, direction);
 
-        if (swipedProfile) {
-          historyRef.current.push({ profile: swipedProfile, direction, index: activeIndex });
-          onSwipe?.(swipedProfile, direction);
-        }
+      const nextIndex = loop
+        ? (cardIndex + 1) % totalProfiles
+        : Math.min(cardIndex + 1, totalProfiles);
 
-        const nextIndex = loop
-          ? (activeIndex + 1) % totalProfiles
-          : Math.min(activeIndex + 1, totalProfiles);
-
-        indexRef.current = nextIndex;
-        onIndexChange?.(nextIndex);
-        isAnimatingRef.current = false;
-        return nextIndex;
-      });
+      setCurrentIndex(nextIndex);
+      onIndexChange?.(nextIndex);
+      resetFeedback();
     },
-    [loop, onIndexChange, onSwipe, pan, profiles],
+    [loop, onIndexChange, onSwipe, profiles, resetFeedback],
   );
 
   const triggerSwipe = useCallback(
     (direction: SwipeDirection) => {
-      const hasCards = profiles.length > 0 && (loop || indexRef.current < profiles.length);
-      if (isAnimatingRef.current || !hasCards) return;
-      isAnimatingRef.current = true;
-      const xTarget = direction === 'right' ? SCREEN_WIDTH * 1.2 : -SCREEN_WIDTH * 1.2;
-      Animated.timing(pan, {
-        toValue: { x: xTarget, y: 0 },
-        duration: 200,
-        useNativeDriver: true,
-      }).start(() => handleSwipeComplete(direction));
+      const hasCards = profiles.length > 0 && (loop || currentIndex < profiles.length);
+      if (!hasCards) return;
+      const target = direction === 'right' ? SWIPE_THRESHOLD : -SWIPE_THRESHOLD;
+      handleSwiping(target);
+      if (direction === 'right') {
+        swiperRef.current?.swipeRight();
+      } else {
+        swiperRef.current?.swipeLeft();
+      }
     },
-    [handleSwipeComplete, loop, pan, profiles.length],
-  );
-
-  const resetPosition = useCallback(() => {
-    Animated.spring(pan, {
-      toValue: { x: 0, y: 0 },
-      useNativeDriver: true,
-      friction: 6,
-    }).start();
-  }, [pan]);
-
-  const panResponder = useMemo(
-    () =>
-      PanResponder.create({
-        onMoveShouldSetPanResponder: (_, gesture) => {
-          const hasCards = profiles.length > 0 && (loop || indexRef.current < profiles.length);
-          return (
-            !isAnimatingRef.current &&
-            hasCards &&
-            (Math.abs(gesture.dx) > 6 || Math.abs(gesture.dy) > 6)
-          );
-        },
-        onPanResponderMove: (_, gesture) => {
-          if (isAnimatingRef.current) return;
-          pan.setValue({ x: gesture.dx, y: gesture.dy });
-        },
-        onPanResponderRelease: (_, gesture) => {
-          if (isAnimatingRef.current) return;
-          if (gesture.dx > SWIPE_THRESHOLD) {
-            triggerSwipe('right');
-            return;
-          }
-          if (gesture.dx < -SWIPE_THRESHOLD) {
-            triggerSwipe('left');
-            return;
-          }
-          resetPosition();
-        },
-      }),
-    [loop, pan, profiles.length, resetPosition, triggerSwipe],
+    [currentIndex, handleSwiping, loop, profiles.length],
   );
 
   useImperativeHandle(ref, () => ({
     swipeLeft: () => triggerSwipe('left'),
     swipeRight: () => triggerSwipe('right'),
     rewind: () => {
-      if (isAnimatingRef.current) return null;
       const last = historyRef.current.pop();
       if (!last) return null;
-      pan.setValue({ x: 0, y: 0 });
-      indexRef.current = last.index;
-      isAnimatingRef.current = false;
-      resetSwipeFeedback();
-      setCurrentIndex(() => {
-        onIndexChange?.(last.index);
-        return last.index;
-      });
+
+      const targetIndex = last.index;
+      if (targetIndex < 0 || targetIndex >= profiles.length) {
+        historyRef.current.push(last);
+        return null;
+      }
+
+      swiperRef.current?.jumpToCardIndex(targetIndex);
+      setCurrentIndex(targetIndex);
+      onIndexChange?.(targetIndex);
+      resetFeedback();
+
       return { profile: last.profile, direction: last.direction };
     },
   }));
 
-  const rotate = pan.x.interpolate({
-    inputRange: [-SCREEN_WIDTH, 0, SCREEN_WIDTH],
-    outputRange: ['-12deg', '0deg', '12deg'],
-    extrapolate: 'clamp',
-  });
+  const hasCards = profiles.length > 0 && (loop || currentIndex < profiles.length);
 
-  const likeOpacity = pan.x.interpolate({
-    inputRange: [0, SWIPE_THRESHOLD],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
+  const renderCard = useCallback(
+    (profile: Profile | undefined, cardIndex: number) => {
+      if (!profile) return null;
+      const topIndex = profiles.length ? currentIndex % profiles.length : -1;
+      const isTopCard = topIndex === cardIndex;
 
-  const nopeOpacity = pan.x.interpolate({
-    inputRange: [-SWIPE_THRESHOLD, 0],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  });
-
-  const renderCards = () => {
-    if (profiles.length === 0 || (!loop && currentIndex >= profiles.length)) {
       return (
-        <View style={[styles.card, styles.emptyCard]}>
-          <Animated.Text style={styles.emptyText}>{emptyLabel}</Animated.Text>
-        </View>
-      );
-    }
-
-    const topIndex = loop ? currentIndex % profiles.length : currentIndex;
-    const nextIndex = loop ? (topIndex + 1) % profiles.length : topIndex + 1;
-    const hasNext = profiles.length > 1 && (loop || nextIndex < profiles.length);
-
-    const visibleCards = hasNext
-      ? [profiles[topIndex], profiles[nextIndex]]
-      : [profiles[topIndex]];
-    const rendered: React.ReactNode[] = [];
-
-    for (let i = visibleCards.length - 1; i >= 0; i -= 1) {
-      const profile = visibleCards[i];
-      const isTopCard = i === 0;
-
-      const cardStyle = [
-        styles.card,
-        !isTopCard && styles.nextCard,
-        isTopCard && {
-          transform: [{ translateX: pan.x }, { translateY: pan.y }, { rotate }],
-          opacity: 1
-        },
-        !isTopCard && { transform: [{ scale: 0.96 }, { translateY: NEXT_CARD_OFFSET }] },
-      ];
-
-      const handlers = isTopCard ? panResponder.panHandlers : undefined;
-
-      rendered.push(
-        <Animated.View
-          key={profile.id}
-          style={cardStyle}
-          pointerEvents={isTopCard ? 'auto' : 'none'}
-          {...handlers}
-        >
+        <View style={[styles.cardContent, !isTopCard && styles.nextCard]}>
           <SwipeCard
             profile={profile}
             likeOpacity={isTopCard ? likeOpacity : undefined}
             nopeOpacity={isTopCard ? nopeOpacity : undefined}
             showBadges={showBadges}
           />
-        </Animated.View>,
+        </View>
       );
-    }
+    },
+    [currentIndex, likeOpacity, nopeOpacity, profiles.length, showBadges],
+  );
 
-    return rendered;
-  };
-
-  return <View style={styles.container}>{renderCards()}</View>;
+  return (
+    <View style={styles.container}>
+      <Swiper
+        key={deckKey}
+        ref={swiperRef}
+        cards={profiles}
+        cardIndex={currentIndex % (profiles.length || 1)}
+        renderCard={renderCard}
+        backgroundColor="transparent"
+        cardHorizontalMargin={0}
+        cardVerticalMargin={0}
+        stackSize={2}
+        stackScale={STACK_SCALE}
+        stackSeparation={NEXT_CARD_OFFSET}
+        horizontalThreshold={SWIPE_THRESHOLD}
+        verticalSwipe={false}
+        outputRotationRange={['-12deg', '0deg', '12deg']}
+        disableBottomSwipe
+        disableTopSwipe
+        animateOverlayLabelsOpacity={false}
+        animateCardOpacity={false}
+        onSwiping={handleSwiping}
+        onSwipedLeft={(index) => handleSwipeComplete(index, 'left')}
+        onSwipedRight={(index) => handleSwipeComplete(index, 'right')}
+        onSwipedAll={() => {
+          if (loop) return;
+          setCurrentIndex(profiles.length);
+          onIndexChange?.(profiles.length);
+          resetFeedback();
+        }}
+        onSwipedAborted={resetFeedback}
+        swipeBackCard
+        infinite={loop}
+        containerStyle={styles.swiperContainer}
+        cardStyle={styles.card}
+      />
+      {!hasCards && (
+        <View style={[styles.card, styles.emptyCard]}>
+          <Text style={styles.emptyText}>{emptyLabel}</Text>
+        </View>
+      )}
+    </View>
+  );
 });
+
+CardDeck.displayName = 'CardDeck';
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // justifyContent: 'center',
+    position: 'relative',
+  },
+  swiperContainer: {
+    flex: 1,
   },
   card: {
     position: 'absolute',
@@ -274,6 +246,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 8 },
     elevation: 6,
     backgroundColor: '#fff',
+    borderRadius: 24
+  },
+  cardContent: {
+    flex: 1,
   },
   nextCard: {
     shadowColor: '#000',
@@ -281,9 +257,10 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
-    opacity: 0.2
+    opacity: 0.2,
   },
   emptyCard: {
+    top: 0,
     alignItems: 'center',
     justifyContent: 'center',
     borderStyle: 'dashed',
