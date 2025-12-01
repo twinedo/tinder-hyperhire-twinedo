@@ -183,43 +183,45 @@ export const CardDeck = forwardRef<CardDeckRef, CardDeckProps>(({
 
   return (
     <View style={styles.container}>
-      <Swiper
-        key={deckKey}
-        ref={swiperRef}
-        cards={profiles}
-        cardIndex={currentIndex % (profiles.length || 1)}
-        renderCard={renderCard}
-        backgroundColor="transparent"
-        cardHorizontalMargin={0}
-        cardVerticalMargin={0}
-        stackSize={2}
-        stackScale={STACK_SCALE}
-        stackSeparation={NEXT_CARD_OFFSET}
-        horizontalThreshold={SWIPE_THRESHOLD}
-        horizontalSwipe={!disableSwipes}
-        disableLeftSwipe={disableSwipes}
-        disableRightSwipe={disableSwipes}
-        verticalSwipe={false}
-        outputRotationRange={['-12deg', '0deg', '12deg']}
-        disableBottomSwipe
-        disableTopSwipe
-        animateOverlayLabelsOpacity={false}
-        animateCardOpacity={false}
-        onSwiping={handleSwiping}
-        onSwipedLeft={(index) => handleSwipeComplete(index, 'left')}
-        onSwipedRight={(index) => handleSwipeComplete(index, 'right')}
-        onSwipedAll={() => {
-          if (loop) return;
-          setCurrentIndex(profiles.length);
-          onIndexChange?.(profiles.length);
-          resetFeedback();
-        }}
-        onSwipedAborted={resetFeedback}
-        swipeBackCard
-        infinite={loop}
-        containerStyle={styles.swiperContainer}
-        cardStyle={styles.card}
-      />
+      {hasCards && (
+        <Swiper
+          key={deckKey}
+          ref={swiperRef}
+          cards={profiles}
+          cardIndex={currentIndex % profiles.length}
+          renderCard={renderCard}
+          backgroundColor="transparent"
+          cardHorizontalMargin={0}
+          cardVerticalMargin={0}
+          stackSize={2}
+          stackScale={STACK_SCALE}
+          stackSeparation={NEXT_CARD_OFFSET}
+          horizontalThreshold={SWIPE_THRESHOLD}
+          horizontalSwipe={!disableSwipes}
+          disableLeftSwipe={disableSwipes}
+          disableRightSwipe={disableSwipes}
+          verticalSwipe={false}
+          outputRotationRange={['-12deg', '0deg', '12deg']}
+          disableBottomSwipe
+          disableTopSwipe
+          animateOverlayLabelsOpacity={false}
+          animateCardOpacity={false}
+          onSwiping={handleSwiping}
+          onSwipedLeft={(index) => handleSwipeComplete(index, 'left')}
+          onSwipedRight={(index) => handleSwipeComplete(index, 'right')}
+          onSwipedAll={() => {
+            if (loop) return;
+            setCurrentIndex(profiles.length);
+            onIndexChange?.(profiles.length);
+            resetFeedback();
+          }}
+          onSwipedAborted={resetFeedback}
+          swipeBackCard
+          infinite={loop}
+          containerStyle={styles.swiperContainer}
+          cardStyle={styles.card}
+        />
+      )}
       {!hasCards && (
         <View style={[styles.card, styles.emptyCard]}>
           <Text style={styles.emptyText}>{emptyLabel}</Text>
